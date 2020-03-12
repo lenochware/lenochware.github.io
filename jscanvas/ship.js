@@ -19,6 +19,8 @@ class Main extends NextGame {
 			x1: 830,
 			y1: 630
 		}
+
+		this.score = 0;
 		
 		this.spawnEnemy();
 	}
@@ -58,20 +60,43 @@ class Main extends NextGame {
 			this.mouse.buttons = 0;
 		}
 
-		this.time = this.now();
+		this.canvas.setFont("20px verdana");
+		this.canvas.text(20, 30, 'lime', "Power: " + this.ship.healthPoints  + " score: " + this.score);
 	}
 
-	explode(x, y, size, color)
+	explodeRand(x, y, size, color)
 	{
 		for (let i = 0; i < size; i++)
 		{
-			let b = new Bullet(x, y);
+			let b = new Frag(x, y);
 			b.setVelocity(10, Math.random() * Utils.TWO_PI);
 			b.color = color;
 
 			this.particles.add(b)			
 		}
 	}
+
+	explode(x, y, size, color, speed, fragClass)
+	{
+
+		let explosion = new Group(this);
+
+		for (let i = 0; i < size; i++)
+		{
+			let b = new fragClass(x, y);
+			b.setVelocity(speed/2, Utils.TWO_PI / size * i);
+			b.color = color;
+
+
+			explosion.add(b);
+		}
+
+		setTimeout(() => explosion.each(m => m.color = 'blue'), 1000);
+		
+		this.particles.add(explosion);
+
+	}
+
 
 	spawnEnemy()
 	{
@@ -198,12 +223,31 @@ class Group
 
 	add(m)
 	{
-		this.members.push(m);
+		if (m instanceof Group) {
+			this.members = this.members.concat(m.members);
+		}
+		else {
+			this.members.push(m);
+		}
+	}
+
+	each(f)
+	{
+		for(let m of this.members) {
+			if (m.dead) continue;
+			f(m);
+		}
 	}
 }
 
-class Bullet extends Vobj
+class Frag extends Vobj
 {
+	constructor(x, y)
+	{
+		super(x, y);
+		this.damage = 5;
+	}
+
 	update(game)
 	{
 		super.update(game);
@@ -224,29 +268,42 @@ class Sprite extends Vobj
 		super(x, y);
 		this.game = game;
 		this.nodes = nodes;
+		this.healthPoints = 10;
+		this.damage = 0;
 	}
 
-	translate(nodes, x, y)
+	hit(vobj)
 	{
-		let output = [];
-		for(let i = 0; i < nodes.length; i += 2) {
-			output.push(nodes[i] + x);
-			output.push(nodes[i+1] + y);
+		this.color = 'red';
+		setTimeout( () => this.color = 'white', 200);
+
+		this.healthPoints -= vobj.damage;
+
+		if (this.healthPoints <= 0) this.destroy(vobj);
+
+		if (vobj instanceof Frag) {
+			this.vx += vobj.vx;
+			this.vy += vobj.vy;
 		}
-
-		return output;
 	}
 
-	rotate(nodes, a)
+	destroy(src)
+	{
+		this.dead = true;
+	}
+
+	transformNodes()
 	{
 		let output = [];
 
-		for(let i = 0; i < nodes.length; i += 2) {
+		let a = this.angle;
+
+		for(let i = 0; i < this.nodes.length; i += 2) {
 			let x = this.nodes[i];
 			let y = this.nodes[i+1];
 
-			output.push(x * Math.cos(a) - y * Math.sin(a));
-			output.push(x * Math.sin(a) + y * Math.cos(a));
+			output.push(x * Math.cos(a) - y * Math.sin(a) + this.x);
+			output.push(x * Math.sin(a) + y * Math.cos(a) + this.y);
 		}
 
 		return output;
@@ -257,7 +314,7 @@ class Sprite extends Vobj
 		this.x = Utils.clamp(this.x, 0, canvas.width());
 		this.y = Utils.clamp(this.y, 0, canvas.height());
 
-		let nodes = this.translate(this.rotate(this.nodes, this.angle), this.x, this.y);
+		let nodes = this.transformNodes();
 
 		canvas.polygon(nodes, this.color);
 	}
@@ -269,14 +326,19 @@ class Ship extends Sprite
 	{
 		super(game, x, y, nodes);
 
-		this.decel = 0.1;
+		this.decel = 0.05;
 		this.angle = 1;
 		this.size = 15;
+		this.healthPoints = 50;
 	}
 
 	fire()
 	{
-		let p = new Bullet(this.x, this.y);
+		if (this.dead) {
+			alert('You are dead!');
+		}
+
+		let p = new Frag(this.x, this.y);
 		p.setVelocity(5, this.angle);
 
 		p.x += 4 * p.vx;
@@ -286,11 +348,11 @@ class Ship extends Sprite
 		this.game.particles.add(p);
 	}
 
-	hit(vobj)
+	destroy(src)
 	{
-		this.color = 'red';
-		setTimeout( () => this.color = 'white', 200);
-	}	
+		super.destroy(src);
+		this.game.explodeRand(this.x, this.y, 20, 'purple');
+	}			
 
 	update(game)
 	{
@@ -301,6 +363,9 @@ class Ship extends Sprite
 
 		if (off == 1) this.vx *= -1;
 		if (off == 2) this.vy *= -1;
+
+		this.vx = Utils.clamp(this.vx, -5, 5);
+		this.vy = Utils.clamp(this.vy, -5, 5);
 
 		this.x += this.vx;
 		this.y += this.vy;
@@ -327,12 +392,28 @@ class Enemy extends Sprite
 
 	hit(vobj)
 	{
-		this.color = 'red';
-		setTimeout( () => this.color = 'white', 200);
+		super.hit(vobj);
 
-		if (vobj instanceof Bullet) {
-			this.dead = true;
-			this.game.explode(this.x, this.y, 10, 'lime');
+		if (vobj instanceof Sprite) {
+			if (Math.abs(this.vx) > Math.abs(this.vy)) {
+				this.vx = Math.sign(this.x - vobj.x) * Math.abs(this.vx);
+			}
+			else {
+				this.vy = Math.sign(this.y - vobj.y) * Math.abs(this.vy);
+			}
+		}
+	}
+
+	destroy(src)
+	{
+		super.destroy(src);
+		this.game.explode(this.x, this.y, 10, 'lime', 5, Frag);
+		this.game.score += 5;
+
+		//Big bang!
+		if (Math.random() < 0.1) {
+			setTimeout(() => this.game.explode(this.x, this.y, 12, 'lime', 7, Frag), 200);
+			setTimeout(() => this.game.explode(this.x, this.y, 15, 'yellow', 10, Frag), 400);
 		}
 	}		
 

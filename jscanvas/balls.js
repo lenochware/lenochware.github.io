@@ -58,8 +58,11 @@ class Main extends NextGame {
 			b2.vx = tx * dpTan2 + nx * m2;
 			b2.vy = ty * dpTan2 + ny * m2;
 
-			b1.angle = Math.atan2(b1.vy, b1. vx);
-			b2.angle = Math.atan2(b2.vy, b2. vx);
+			b1.va += (dpTan2 - dpTan1) / 20;
+			b2.va += (dpTan1 - dpTan2) / 20;
+
+
+
 		}		
 	}
 
@@ -215,6 +218,7 @@ class Ball extends Vobj
 		this.size = size;
 		this.angle = 0;
 		this.mass = 10 * size;
+		this.va = 0;
 		this.hitBall = null;
 	}
 
@@ -267,10 +271,15 @@ class Ball extends Vobj
 		this.ax = -0.02 * this.vx;
 		this.ay = -0.02 * this.vy;
 
+		if (Math.abs(this.va) < 0.001) this.va = 0;
+		else this.va -= this.size / 500 * this.va;
+
 		this.vx += this.ax;
 		this.vy += this.ay;
 		this.x += this.vx;
 		this.y += this.vy;
+
+		this.angle += this.va;
 	}
 
 	draw(canvas)
