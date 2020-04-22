@@ -106,7 +106,12 @@ class Main extends NextGame {
 
 		if (this.spaceObjects.count() > 10) return;
 
-		let mob = new Enemy(this, Utils.random(100, 700), this.space.y0 + 10, []);
+		
+		const MODEL = [-50,-10,10,-10,10,-20,-10,-20,-10,-10,50,-10,0,10];
+		//const MODEL = [10, 0, -10, 10, -10, -10];
+
+		let mob = new Enemy(this, Utils.random(100, 700), this.space.y0 + 10, MODEL);
+
 		mob.setVelocity(Utils.random(1, 4), Math.random() * Utils.TWO_PI);
 		this.spaceObjects.add(mob);
 		console.log('spawn enemy');
@@ -246,6 +251,7 @@ class Frag extends Vobj
 	{
 		super(x, y);
 		this.damage = 5;
+		this.size = 2;
 	}
 
 	update(game)
@@ -256,7 +262,7 @@ class Frag extends Vobj
 
 	draw(canvas)
 	{
-		canvas.rectf(this.x, this.y, this.size, this.size, this.color);
+		canvas.circle(this.x, this.y, this.size, this.color);
 	}
 }
 
@@ -268,6 +274,7 @@ class Sprite extends Vobj
 		super(x, y);
 		this.game = game;
 		this.nodes = nodes;
+		this.angle = 0;
 		this.healthPoints = 10;
 		this.damage = 0;
 	}
@@ -375,9 +382,9 @@ class Ship extends Sprite
 class Enemy extends Sprite
 {
 
-	constructor(sprite, x, y, nodes)
+	constructor(game, x, y, nodes)
 	{
-		super(sprite, x, y, nodes);
+		super(game, x, y, nodes);
 		this.size = 20;
 	}
 
@@ -417,10 +424,10 @@ class Enemy extends Sprite
 		}
 	}		
 
-	draw(canvas)
-	{
-		canvas.rect(this.x - 20, this.y -20, 40, 40, this.color);
-	}
+	// draw(canvas)
+	// {
+	// 	canvas.rect(this.x - 20, this.y -20, 40, 40, this.color);
+	// }
 
 }
 

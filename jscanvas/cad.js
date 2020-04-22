@@ -14,6 +14,9 @@ class Main extends NextGame {
 		this.offsetY = 0;
 
 		this.grid = 10;
+
+		this.cursor = {};
+		this.origin = {x: 0, y: 0};
 	}
 
 	findNode(pos)
@@ -60,6 +63,10 @@ class Main extends NextGame {
 
 		this.canvas.resetTransform();
 		this.canvas.clear();
+
+		this.canvas.text(30, 30, 'white', `(${this.cursor.x - this.origin.x}, ${this.cursor.y - this.origin.y})`);
+
+
 		this.canvas.applyTransform();
 		//this.canvas.context.rotate(40 * Math.PI / 180); DOMMatrix!
 		this.drawGrid();
@@ -69,15 +76,19 @@ class Main extends NextGame {
 			s.drawNodes(this.canvas);
 		}
 
-		let cursor = {};
-		cursor.x = Math.round((this.mouse.x - this.offsetX) / this.canvas.scale / this.grid) * this.grid;
-		cursor.y = Math.round((this.mouse.y - this.offsetY) / this.canvas.scale / this.grid) * this.grid;
-		this.canvas.circle(cursor.x, cursor.y, 2, 'purple');
+		this.cursor.x = Math.round((this.mouse.x - this.offsetX) / this.canvas.scale / this.grid) * this.grid;
+		this.cursor.y = Math.round((this.mouse.y - this.offsetY) / this.canvas.scale / this.grid) * this.grid;
+		this.canvas.circle(this.cursor.x, this.cursor.y, 2, 'purple');
 
-		if (this.kb.key == 'l') this.addShape(new Line, cursor);
-		if (this.kb.key == 'c') this.addShape(new Circle, cursor);
-		if (this.kb.key == 'r') this.addShape(new Rect, cursor);
-		if (this.kb.key == 's') this.addShape(new Spline, cursor);
+		if (this.kb.key == 'l') this.addShape(new Line, this.cursor);
+		if (this.kb.key == 'c') this.addShape(new Circle, this.cursor);
+		if (this.kb.key == 'r') this.addShape(new Rect, this.cursor);
+		if (this.kb.key == 's') this.addShape(new Spline, this.cursor);
+		
+		if (this.kb.key == 'o') {
+			this.origin = Utils.clone(this.cursor);
+			this.kb.key = '';
+		}
 		
 		if (this.kb.key == 'Escape') {
 			this.offsetX = this.offsetY = 0;
@@ -87,21 +98,18 @@ class Main extends NextGame {
 		};
 
 		if (this.selectedNode) {
-			this.selectedNode.x = cursor.x;
-			this.selectedNode.y = cursor.y;
+			this.selectedNode.x = this.cursor.x;
+			this.selectedNode.y = this.cursor.y;
 		}
-
-		//this.canvas.text(30, 30, 'red', JSON.stringify(this.mouse.clickX));
-
 
 		if(this.mouse.buttons) {
 			if (this.selectedNode) {
 				let s = this.selectedNode.shape;
-				this.selectedNode = s.getNode(cursor);
+				this.selectedNode = s.getNode(this.cursor);
 				if (!this.selectedNode) s.color = 'green';
 			}
 			else {
-				this.selectedNode = this.findNode(cursor);
+				this.selectedNode = this.findNode(this.cursor);
 				if (this.selectedNode) this.selectedNode.shape.color = 'red';
 			}
 

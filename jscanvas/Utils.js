@@ -45,13 +45,18 @@ class Utils
 		return Math.max(a, Math.min(x, b));
 	}
 
-	static isEmpty(input)
+	static isEmpty(obj)
 	{
-		 if (typeof input === 'array') {
-				return input.length === 0;
-			}
+		if (typeof obj === 'array') {
+			return obj.length === 0;
+		}
 
-			return !input || Object.keys(input).length === 0;
+		return !obj || Object.keys(obj).length === 0;
+	}
+
+	static clone(obj)
+	{
+		return Object.assign({}, obj);
 	}
 
 	static getUrlParam(name)
