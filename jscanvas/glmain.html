@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Canvas test</title>
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+	<script src="Utils.js"></script>
+	<script src="NextGameGL.js"></script>
+	<script>
+		function start()
+		{
+			jQuery.ajaxPrefilter( "script", function( s ) {
+			    s.crossDomain = true;
+			});
+
+			let script = Utils.getUrlParam('script');
+			if (!script) {
+				alert('Usage: index.html?script=script-name');
+				return;
+			}
+
+			$.getScript(script + '.js').done(function() {
+				game = new Main();
+				game.start();
+			})
+			.fail(function() {
+				console.warn('Loading script failed.');
+			});
+		}
+
+		$(document).ready(start);
+	</script>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+
+		.debug-box {
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			padding: 10px;
+			color: lime;
+			font-family: monospace; 
+			font-size: 15px;
+		}
+	</style>
+</head>
+<body>
+	<div class="debug-box" id="debug-box">debug text</div>
+</body>
+</html>
